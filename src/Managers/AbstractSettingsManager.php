@@ -179,16 +179,11 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
      */
     public function delete(string $path = null): SettingsManagerContract
     {
-        if (!$path) {
-            $settings = [];
-        } else {
-            $settings = $this->model->getSettingsValue();
-            Arr::forget($settings, $path);
+        if ($path === null) {
+            // delete all
+            return $this->deleteMultiple(array_keys($this->allFlattened()));
         }
-
-        $this->apply($settings);
-
-        return $this;
+        return $this->deleteMultiple([$path]);
     }
 
     /**
@@ -225,12 +220,16 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
      */
     public function deleteMultiple(iterable $paths): SettingsManagerContract
     {
-        $settings = $this->model->getSettingsValue();
+        $flattenedSettings = static::dotFlatten($this->model->getSettingsValue());
         foreach ($paths as $path) {
-            Arr::forget($settings, $path);
+            Arr::forget($flattenedSettings, $path);
         }
 
-        $this->apply($settings);
+        $array = [];
+        foreach ($flattenedSettings as $key => $value) {
+            Arr::set($array, $key, $value);
+        }
+        $this->apply($array);
 
         return $this;
     }
