@@ -6,6 +6,7 @@ use Exception;
 use Glorand\Model\Settings\Contracts\SettingsManagerContract;
 use Glorand\Model\Settings\Exceptions\ModelSettingsException;
 use Glorand\Model\Settings\Traits\HasSettings;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Cache;
 /**
  * Class AbstractSettingsManager
  * @package Glorand\Model\Settings\Managers
+ * @SuppressWarnings(PHPMD.StaticAccess)
  */
 abstract class AbstractSettingsManager implements SettingsManagerContract
 {
@@ -51,10 +53,11 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
 
     /**
      * Flatten array with dots for settings package
-     * @param $array
+     * @param array $array
      * @param string $prepend
      * @param array $depthKeys list of keys for max depth of flattening
      * @return array
+     * @SuppressWarnings(PHPMD.ElseExpression)
      */
     public static function dotFlatten($array, string $prepend = '', array $depthKeys = []): array
     {
@@ -295,5 +298,14 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
     public function getAllSettingsCacheKey(): string
     {
         return config('model_settings.settings_table_cache_prefix') . $this->model->getTable() . ':' . $this->model->getKey() . '::all';
+    }
+
+    /**
+     * @param  array  $settings
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function validate(array $settings)
+    {
+        Validator::make(Arr::wrap($settings), Arr::wrap($this->model->getRules()))->validate();
     }
 }
