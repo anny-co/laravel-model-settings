@@ -13,12 +13,15 @@ use Glorand\Model\Settings\Models\ModelSettings;
 class TableSettingsManager extends AbstractSettingsManager
 {
     /**
-     * @param array $settings
+     * @param  array  $settings
      * @return \Glorand\Model\Settings\Contracts\SettingsManagerContract
      * @throws \Exception
+     * @SuppressWarnings(PHPMD.ElseExpression)
      */
     public function apply(array $settings = []): SettingsManagerContract
     {
+        $this->validate($settings);
+
         $modelSettings = $this->model->modelSettings()->first();
         if (!count($settings)) {
             if ($modelSettings) {
@@ -27,6 +30,7 @@ class TableSettingsManager extends AbstractSettingsManager
         } else {
             if (!$modelSettings) {
                 $modelSettings = new ModelSettings();
+                $modelSettings->setConnection($this->model->getConnectionName());
                 $modelSettings->model()->associate($this->model);
             }
             $modelSettings->settings = $settings;

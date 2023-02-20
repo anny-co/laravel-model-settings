@@ -7,14 +7,15 @@
 </h6>
 
 <p align="center">
-<a href="https://packagist.org/packages/glorand/laravel-model-settings">
- <img src="https://poser.pugx.org/glorand/laravel-model-settings/v/stable" alt="Latest Stable Version">
+<a href="https://packagist.org/packages/glorand/laravel-model-settings/stats">
+<img src="https://img.shields.io/packagist/dt/glorand/laravel-model-settings?style=for-the-badge&color=red" alt="Total Downloads"/>
 </a>
+<br />
 <a href="https://packagist.org/packages/glorand/laravel-model-settings">
-  <img src="https://poser.pugx.org/glorand/laravel-model-settings/downloads" alt="Total Downloads">
+ <img src="https://img.shields.io/packagist/v/glorand/laravel-model-settings" alt="Latest Stable Version">
 </a>
 <a href="https://github.com/glorand/laravel-model-settings/actions">
-    <img src="https://github.com/glorand/laravel-model-settings/workflows/Test/badge.svg?branch=master">
+<img src="https://github.com/glorand/laravel-model-settings/workflows/Test/badge.svg" alt="'Github Actions" />
 </a>
  <a href="https://travis-ci.com/glorand/laravel-model-settings">
  <img src="https://travis-ci.com/glorand/laravel-model-settings.svg?branch=master" alt="Build Status">
@@ -22,13 +23,13 @@
  <a href="LICENSE.md">
  <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat" alt="Software License">
  </a>
+<a href="https://codeclimate.com/github/glorand/laravel-model-settings/maintainability">
+<img src="https://api.codeclimate.com/v1/badges/ea0941afe155dd14f5d8/maintainability" alt="maintainability" />
+</a>
 <br />
 <a href="https://github.styleci.io/repos/163381474">
- <img src="https://github.styleci.io/repos/163381474/shield?branch=master" alt="StyleCI">
+ <img src="https://github.styleci.io/repos/163381474/shield?branch=master&style=flat" alt="StyleCI">
  </a>
-<a href="https://codeclimate.com/github/glorand/laravel-model-settings/maintainability">
-<img src="https://api.codeclimate.com/v1/badges/ea0941afe155dd14f5d8/maintainability" />
-</a>
 <a href="https://scrutinizer-ci.com/g/glorand/laravel-model-settings/">
  <img src="https://scrutinizer-ci.com/g/glorand/laravel-model-settings/badges/quality-score.png?b=master" alt="Scrutinizer Code Quality">
  </a>
@@ -37,9 +38,10 @@
  </a>
  <br />
  <a title="MadeWithLaravel.com Shield" href="https://madewithlaravel.com/p/laravel-model-settings/shield-link"> <img src="https://madewithlaravel.com/storage/repo-shields/1716-shield.svg"/></a>
+<a title="PHP Version" href="#"><img src="https://img.shields.io/packagist/php-v/glorand/laravel-model-settings" alt="PHP Version" /></a>
 </p>
 
-The package requires PHP 7.2+ and follows the FIG standards PSR-1, PSR-2 and PSR-4
+The package requires PHP 7.3+ and follows the FIG standards PSR-1, PSR-2, PSR-4 and PSR-12
 to ensure a high level of interoperability between shared PHP.
 
 Bug reports, feature requests, and pull requests can be submitted by following our [Contribution Guide](CONTRIBUTING.md).
@@ -60,6 +62,8 @@ Bug reports, feature requests, and pull requests can be submitted by following o
     - [Check if the model has a specific setting](#check)
     - [Remove a setting from a model](#remove)
     - [Persistence](#persistence)
+    - [Using another method name other than `settings()`](#invokeSettingsBy)
+    - [Validation system for settings data](#validation)
  - [Changelog](#changelog)
  - [Contributing](#contributing)
 - [License](#license)
@@ -73,16 +77,6 @@ $ composer require glorand/laravel-model-settings
 {
     "require": {
         "glorand/laravel-model-settings": "^4.0"
-    }
-}
-```
-
-For Laravel 5.8 and lower use V3.*
-
-```
-{
-    "require": {
-        "glorand/laravel-model-settings": "^3.0"
     }
 }
 ```
@@ -266,6 +260,45 @@ MODEL_SETTINGS_PERSISTENT=true
 'settings_persistent' => env('MODEL_SETTINGS_PERSISTENT', true),
 ```
 If the persistence is `false` you have to save the model after the operation.
+
+### Using another method name other than `settings()` <a name="invokeSettingsBy"></a>
+If you prefer to use another name other than `settings` ,
+you can do so by defining a `$invokeSettingsBy` property. 
+This forward calls (such as `configurations()`) to the `settings()` method.
+
+### Validation system for settings data <a name="validation></a>
+When you're using the set() or apply()|update() methods thrown an exception when you break a rule.
+You can define rules on model using `$settingsRules` public property, and the rules array definition is identical with
+the Laravel default validation rules. ([see Laravel rules](https://laravel.com/docs/8.x/validation#available-validation-rules))
+```php
+class User extends Model
+{
+    use HasSettingsTable;
+
+    public array $defaultSettings = [
+        'user' => [
+            'name' => 'Test User',
+            'email' => 'user@test.com'
+            'age' => 27,
+        ],
+        'language' => 'en',
+        'max_size' => 12,
+    ];
+
+    // settings rules
+    public array $settingsRules = [
+        'user' => 'array',
+        'user.email' => [
+            'string',
+            'email',
+        ],
+        'user.age' => 'integer',
+        'language' => 'string|in:en,es,it|max:2',
+        'max_size' => 'int|min:5|max:15',
+    ];
+}
+
+```
 
 ## Changelog <a name="changelog"></a>
 Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.

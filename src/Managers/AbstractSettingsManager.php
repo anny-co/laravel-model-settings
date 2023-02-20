@@ -5,6 +5,7 @@ namespace Glorand\Model\Settings\Managers;
 use Glorand\Model\Settings\Contracts\SettingsManagerContract;
 use Glorand\Model\Settings\Exceptions\ModelSettingsException;
 use Glorand\Model\Settings\Traits\HasSettings;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Cache;
 /**
  * Class AbstractSettingsManager
  * @package Glorand\Model\Settings\Managers
+ * @SuppressWarnings(PHPMD.StaticAccess)
  */
 abstract class AbstractSettingsManager implements SettingsManagerContract
 {
@@ -39,29 +41,34 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
      * @param array $arr
      * @return bool
      */
-    public static function isAssoc(array $arr)
+    private static function isAssoc(array $arr): bool
     {
-        if (array() === $arr) return false;
+        if ([] === $arr) {
+            return false;
+        }
+
         return array_keys($arr) !== range(0, count($arr) - 1);
     }
 
     /**
      * Flatten array with dots for settings package
-     * @param $array
+     * @param array $array
      * @param string $prepend
      * @return array
+     * @SuppressWarnings(PHPMD.ElseExpression)
      */
-    public static function dotFlatten($array, $prepend = '') {
+    public static function dotFlatten(array $array, string $prepend = ''): array
+    {
         $results = [];
         foreach ($array as $key => $value) {
             // only re-run if nested array is associative (key-based)
-            // cannot use pre-shipped Arr:dot method
             if (is_array($value) && static::isAssoc($value) && !empty($value)) {
-                $results = array_merge($results, static::dotFlatten($value, $prepend.$key.'.'));
+                $results = array_merge($results, static::dotFlatten($value, $prepend . $key . '.'));
             } else {
-                $results[$prepend.$key] = $value;
+                $results[$prepend . $key] = $value;
             }
         }
+
         return $results;
     }
 
@@ -83,10 +90,11 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
      * Get flat merged array with dot-notation keys
      * @return array
      */
-    public function allFlattened()
+    public function allFlattened(): array
     {
         $flattenedDefaultSettings = static::dotFlatten($this->model->getDefaultSettings());
         $flattenedSettingsValue = static::dotFlatten($this->model->getSettingsValue());
+
         return array_merge($flattenedDefaultSettings, $flattenedSettingsValue);
     }
 
@@ -118,7 +126,7 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
     /**
      * @param string|null $path
      * @param null $default
-     * @return array|mixed
+     * @return array|\ArrayAccess|mixed
      */
     public function get(string $path = null, $default = null)
     {
@@ -130,16 +138,20 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
      * @param null $default
      * @return array
      */
-    public function getMultiple(iterable $paths = null, $default = null): array
+    public function getMultiple(iterable $paths = null, $default = null): iterable
     {
         $array = [];
         $allFlattened = $this->allFlattened();
+        $settingsArray = [];
+        foreach ($allFlattened as $key => $value) {
+            Arr::set($settingsArray, $key, $value);
+        }
         if (is_null($paths)) {
-            $paths = array_keys($allFlattened);
+            return $settingsArray;
         }
 
         foreach ($paths as $path) {
-            Arr::set($array, $path, Arr::get($allFlattened, $path, Arr::get($default, $path)));
+            Arr::set($array, $path, Arr::get($settingsArray, $path, $default));
         }
 
         return $array;
@@ -179,11 +191,16 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
      */
     public function delete(string $path = null): SettingsManagerContract
     {
-        if ($path === null) {
-            // delete all
-            return $this->deleteMultiple(array_keys($this->allFlattened()));
+        if (!$path) {
+            $settings = [];
+        } else {
+            $settings = $this->all();
+            Arr::forget($settings, $path);
         }
-        return $this->deleteMultiple([$path]);
+
+        $this->apply($settings);
+
+        return $this;
     }
 
     /**
@@ -240,5 +257,14 @@ abstract class AbstractSettingsManager implements SettingsManagerContract
     public function getAllSettingsCacheKey(): string
     {
         return config('model_settings.settings_table_cache_prefix') . $this->model->getTable() . '::all';
+    }
+
+    /**
+     * @param  array  $settings
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function validate(array $settings)
+    {
+        Validator::make(Arr::wrap($settings), Arr::wrap($this->model->getRules()))->validate();
     }
 }

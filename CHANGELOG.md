@@ -2,6 +2,47 @@
 
 All notable changes to `glorand/laravel-model-settings` will be documented in this file
 
+## 5.0.0 - 2022-02-10
+### Added
+- Add support for Laravel 9 by @belzaaron
+- DROP Laravel 7,8 support
+- 8.0 min. php version
+
+## 4.4.1 - 2021-11-13
+### Fix
+- fix validation variable name
+
+## 4.4.0 - 2021-11-01
+### Added
+- Validation system for settings data
+
+## 4.3.0 - 2021-10-11
+### Added
+- Using another method name other than settings()
+
+## 4.2.2 - 2021-04-07
+### Fix param type
+
+## 4.2.1 - 2020-12-14
+### Added
+- PHP8 support
+
+## 4.2.0 - 2020-12-14
+### Added
+- Refactor the work with default settings (flatten arrays)
+
+## 4.1.0 - 2020-12-03
+### Added
+- Refactor unit tests
+
+## 4.0.2 - 2020-12-01
+### Added
+- Setup connection of the model in HasSettingsTableTrait
+
+## 4.0.1 - 2020-11-19
+### Added
+- Update README
+
 ## 4.0.0 - 2020-09-11
 ### Added
 - Add support for Laravel 8
